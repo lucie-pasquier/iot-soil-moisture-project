@@ -1,0 +1,15 @@
+# Mac system files
+.DS_Store
+
+# Python (in case you use it later)
+__pycache__/
+*.pyc
+
+# VS Code
+.vscode/
+
+# Jupyter (if you ever use notebooks)
+.ipynb_checkpoints/
+
+# Logs
+*.log
