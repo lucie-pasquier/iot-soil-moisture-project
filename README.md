@@ -1,137 +1,91 @@
-# 🌱 IoT Soil Moisture Monitoring – Part 1: Sensing
+# IoT Soil Moisture Monitoring
 
 ## Overview
 
-This section of the project focuses on the **data collection (sensing) pipeline** for monitoring soil moisture over time using an IoT device.
+This project monitors the soil moisture of an indoor basil plant using a custom IoT sensing pipeline, paired with publicly available weather data. The goal was to explore whether continuous real-time soil data could form the foundation for a more engaging, personalised plant care experience.
 
-An **ESP32 microcontroller** connected to a **capacitive soil moisture sensor** was used to collect real-time measurements. The data was transmitted via Wi-Fi to a **Google Sheets database** using a Google Apps Script endpoint. 
+The project has two parts:
+- **Part 1: Sensing** — ESP32 hardware, data collection pipeline, cloud storage
+- **Part 2: IoT & Analytics** — interactive web dashboard and time series analysis
 
-In addition to soil measurements, **hourly weather data (temperature and humidity)** was integrated from a public API to provide contextual environmental information.
+---
+
+## Live Dashboard
+
+**View the dashboard here:** [https://lucie-pasquier.github.io/iot-soil-moisture-project/Part_2_Reporting/dashboard.html]
+
+No installation needed — opens directly in your browser.
+
+---
+
+## Repository Structure
+```
+├── Part_1_Sensing/
+│   ├── arduino_code.ino        # ESP32 firmware
+│   ├── app_script_code.gs      # Google Apps Script endpoint
+│   └── Data/
+│       ├── Soil Data - Soil Data.csv
+│       ├── Soil Data - Weather.csv
+│       └── Soil Data - CombinedData.csv
+├── Part_2_Reporting/
+│   ├── dashboard.html          # Interactive dashboard
+│   ├── CombinedData.csv        # Dataset used by dashboard
+│   └── data_analysis.ipynb     # Pearson correlation analysis
+└── .gitignore
+```
+
+---
+
+## How to Run
+
+### View the dashboard
+Open the live link above. No setup required.
+
+To run locally instead:
+```bash
+cd Part_2_Reporting
+python3 -m http.server 8000
+```
+Then open `http://localhost:8000/dashboard.html` in your browser.
+
+### Run the data analysis notebook
+```bash
+cd Part_2_Reporting
+jupyter notebook data_analysis.ipynb
+```
+Requires Python with `pandas` installed (`pip install pandas`).
+
+### Arduino firmware
+Open `arduino_code.ino` in the Arduino IDE. Requires the ESP32 board package installed. Update WiFi credentials and Apps Script URL before flashing.
 
 ---
 
 ## System Architecture
 
-**Hardware → Network → Cloud → Storage**
+**Sensor → ESP32-S3 → WiFi (HTTP GET) → Google Apps Script → Google Sheets**
 
-- **Sensor:** Capacitive soil moisture sensor (analog output)
-- **Microcontroller:** ESP32-S3
-- **Communication:** Wi-Fi (HTTP requests)
-- **Backend:** Google Apps Script (web app endpoint)
-- **Storage:** Google Sheets
-- **External Data Source:** Open-Meteo API (weather data)
+**Open-Meteo API → Google Apps Script (scheduled hourly) → Google Sheets**
 
----
-
-## Data Collection Process
-
-### Soil Moisture Sensing
-
-- The ESP32 reads analog values from the soil moisture sensor via a GPIO pin.
-- Raw sensor values are mapped to a **moisture percentage** using calibration bounds:
-  - Dry soil ≈ 2630  
-  - Wet soil ≈ 1200  
-- The mapping is computed as:
-
-
-Moisture (%) = 100 × (DRY_RAW - raw) / (DRY_RAW - WET_RAW)
-Measurements are taken every 30 minutes using a fixed loop delay.
-
-Each reading includes:
-- Timestamp  
-- Raw sensor value  
-- Moisture percentage  
-
----
-
-## Data Transmission
-
-After each reading, the ESP32 sends data via an HTTP GET request to a deployed Google Apps Script web app.
-
-The script appends each reading as a new row in Google Sheets with an automatic timestamp.
-
----
-
-## Weather Data Integration
-
-Weather data was collected using the Open-Meteo API.
-
-Variables collected:
-- Temperature (°C)  
-- Relative humidity (%)  
-
-Data was recorded at hourly intervals in a separate sheet.
-
----
-
-## Data Alignment
-
-Because soil data is collected every 30 minutes and weather data hourly, the two datasets were aligned in a combined dataset:
-
-- Each soil measurement is matched with the most recent preceding weather observation  
-- This is equivalent to a forward-fill alignment strategy  
-- Ensures no future information is used  
-
----
-
-## Dataset Description
-
-All datasets are stored in the `/Data` folder:
-
-### 1. `Soil Data - Soil Data.csv`
-
-Raw sensor readings:
-- Timestamp  
-- RawValue  
-- MoisturePercent  
-- WaterAddedCups  
-
-### 2. `Soil Data - Weather.csv`
-
-Hourly weather data:
-- `timestamp`  
-- `temperature_2m_C`  
-- `relative_humidity_2m_pct`  
-
-### 3. `Soil Data - CombinedData.csv`
-
-Merged dataset:
-- Soil readings + aligned weather data  
-- Each row represents a single timepoint with both sensor and environmental context  
+- Soil moisture sampled every **30 minutes**
+- Weather data collected every **60 minutes**
+- Datasets aligned via forward-fill in the CombinedData tab
 
 ---
 
 ## Data Collection Period
 
-- Start: **27 Feb 2026**  
-- End: **12 Mar 2026**  
-- Duration: ~2 weeks of continuous measurements  
+**27 Feb 2026 to 12 Mar 2026** (~2 weeks, ~700 soil readings, ~360 weather records)
 
 ---
 
-## Notes & Limitations
+## Key Findings
 
-- Soil measurements begin slightly earlier than weather data, resulting in a small number of initial rows without matched weather values.  
-- Sampling is performed using a fixed delay loop, resulting in consistent timestamps (e.g., `xx:02:11`, `xx:32:11`).  
-- The system does not use real-time clock synchronization; timing is relative to device start.  
-- Sensor readings may be affected by soil density and placement, which can influence measurement sensitivity.  
+| Metric | Value |
+|--------|-------|
+| Average moisture | 63.4% |
+| Moisture range | 40.9% – 82.1% |
+| Watering events | 4 (every ~4 days) |
+| Moisture vs Temperature (Pearson r) | -0.10 |
+| Moisture vs Humidity (Pearson r) | -0.19 |
 
----
-
-## Files
-
-- `arduino_code.ino` – ESP32 data collection and transmission logic  
-- `app_script_code.gs` – Google Apps Script for receiving and storing data  
-- `/Data` – CSV exports of collected datasets  
-
----
-
-## Summary
-
-This sensing pipeline demonstrates:
-
-- Reliable periodic data collection using embedded hardware  
-- Real-time cloud integration via lightweight HTTP requests  
-- Multi-source time series integration (sensor + external API)  
-
-This forms the foundation for subsequent analysis and modeling.
+Weak correlations confirm that outdoor weather is a poor proxy for indoor plant moisture dynamics.
