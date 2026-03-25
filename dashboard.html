@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Plant Monitor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0faf4;
+      color: #1b4332;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: 40px;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(135deg, #1b4332 0%, #40916c 100%);
+      color: white;
+      padding: 20px 20px 26px;
+      border-radius: 0 0 28px 28px;
+      box-shadow: 0 6px 24px rgba(27, 67, 50, 0.25);
+    }
+    .header-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-leaf {
+      font-size: 26px;
+      line-height: 1;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .header-sub {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 3px;
+      margin-left: 36px;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Status bar ── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      font-size: 12px;
+      color: #52b788;
+      font-weight: 500;
+    }
+    .status-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #52b788;
+      margin-right: 6px;
+      animation: blink 2.4s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Plant section ── */
+    .plant-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 20px 4px;
+    }
+
+    .speech-bubble {
+      position: relative;
+      background: white;
+      border-radius: 20px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #2d6a4f;
+      box-shadow: 0 4px 18px rgba(45, 106, 79, 0.13);
+      max-width: 280px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 10px solid transparent;
+      border-top-color: white;
+      border-bottom: 0;
+    }
+
+    /* ── Cards grid ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 16px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 18px 16px;
+      box-shadow: 0 2px 14px rgba(45, 106, 79, 0.08);
+    }
+    .card--wide   { grid-column: 1 / -1; }
+    .card--accent {
+      background: linear-gradient(135deg, #52b788, #1b4332);
+      color: white;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #52b788;
+      margin-bottom: 6px;
+    }
+    .card--accent .card-label { color: rgba(255,255,255,0.7); }
+
+    .card-value {
+      font-size: 38px;
+      font-weight: 800;
+      line-height: 1;
+      color: #1b4332;
+    }
+    .card--accent .card-value { color: white; }
+    .card-unit {
+      font-size: 17px;
+      font-weight: 500;
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: #74c69d;
+      margin-top: 4px;
+    }
+    .card--accent .card-sub { color: rgba(255,255,255,0.65); }
+
+    .moisture-bar-bg {
+      height: 5px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .moisture-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.85);
+      transition: width 0.8s cubic-bezier(.4,0,.2,1);
+      width: 0%;
+    }
+
+    /* ── Info chips ── */
+    .chips-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 0 16px;
+      margin-top: 12px;
+    }
+    .chip {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 8px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(45, 106, 79, 0.07);
+    }
+    .chip-icon  { font-size: 20px; margin-bottom: 5px; }
+    .chip-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1b4332;
+      line-height: 1.2;
+    }
+    .chip-label {
+      font-size: 10px;
+      color: #95d5b2;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-top: 2px;
+    }
+
+    /* ── Summary card ── */
+    .summary-card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px;
+      margin: 12px 16px 0;
+      box-shadow: 0 2px 14px rgba(45, 106, 79, 0.08);
+    }
+    .summary-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #52b788;
+      margin-bottom: 14px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0faf4;
+      font-size: 13px;
+    }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row-label { color: #95d5b2; font-weight: 500; }
+    .summary-row-value { font-weight: 700; color: #1b4332; }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 0;
+      border: none;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+      background: white;
+      color: #74c69d;
+      box-shadow: 0 2px 8px rgba(45, 106, 79, 0.08);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #40916c, #1b4332);
+      color: white;
+      box-shadow: 0 4px 14px rgba(27, 67, 50, 0.25);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Chart card ── */
+    .chart-card {
+      background: white;
+      border-radius: 20px;
+      padding: 20px 16px 14px;
+      margin: 12px 16px 0;
+      box-shadow: 0 2px 14px rgba(45, 106, 79, 0.08);
+    }
+    .chart-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #52b788;
+      margin-bottom: 10px;
+    }
+    #chart-wrap-moisture {
+      width: 100%;
+      overflow: hidden;
+    }
+    #chart-moisture { display: block; }
+
+    /* ── Chart section heading ── */
+    .chart-section-heading {
+      font-size: 13px;
+      font-weight: 700;
+      color: #2d6a4f;
+      padding: 18px 20px 2px;
+    }
+    #chart-wrap-weather,
+    #chart-wrap-moist-temp,
+    #chart-wrap-moist-hum  { width: 100%; overflow: hidden; }
+    #chart-weather,
+    #chart-moist-temp,
+    #chart-moist-hum       { display: block; }
+
+    /* ── Time slider ── */
+    .slider-card {
+      background: white;
+      border-radius: 20px;
+      padding: 16px 20px 18px;
+      margin: 8px 16px 0;
+      box-shadow: 0 2px 14px rgba(45, 106, 79, 0.08);
+    }
+    .slider-card-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #52b788;
+      margin-bottom: 14px;
+    }
+    #time-slider {
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: #d8f3dc;     /* overridden by JS for fill effect */
+      outline: none;
+      cursor: pointer;
+      display: block;
+    }
+    #time-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #52b788, #2d6a4f);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(45, 106, 79, 0.45);
+      border: 3px solid white;
+    }
+    #time-slider::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #52b788, #2d6a4f);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(45, 106, 79, 0.45);
+      border: 3px solid white;
+    }
+    #time-slider::-moz-range-track {
+      height: 6px;
+      border-radius: 3px;
+      background: #d8f3dc;
+    }
+    #time-slider::-moz-range-progress {
+      height: 6px;
+      border-radius: 3px;
+      background: #40916c;
+    }
+    .slider-timestamp {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2d6a4f;
+      margin-top: 12px;
+      letter-spacing: 0.1px;
+    }
+
+    /* ── Error state ── */
+    .error-card {
+      background: #fff5f5;
+      border: 1.5px solid #fed7d7;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 16px;
+      text-align: center;
+      color: #c53030;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-top">
+      <span class="header-leaf">&#127807;</span>
+      <h1>Plant Monitor</h1>
+    </div>
+    <div class="header-sub">ESP32-S3 &middot; Capacitive Soil Sensor &middot; London</div>
+  </header>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <span><span class="status-dot"></span>Sensor data</span>
+    <span id="last-updated">Loading&hellip;</span>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" id="btn-live"    onclick="switchTab('live')">Live</button>
+    <button class="tab-btn"        id="btn-history" onclick="switchTab('history')">History</button>
+  </div>
+
+  <!-- Live tab -->
+  <div class="tab-panel active" id="tab-live">
+
+  <!-- Plant + speech bubble -->
+  <section class="plant-section">
+    <div class="speech-bubble" id="speech-bubble">Checking on your plant&hellip;</div>
+
+    <!-- Simple friendly plant SVG -->
+    <svg width="150" height="168" viewBox="0 0 150 168" xmlns="http://www.w3.org/2000/svg">
+      <!-- Pot body -->
+      <path d="M45 128 L105 128 L97 162 L53 162 Z" fill="#a0714f"/>
+      <!-- Pot rim -->
+      <rect x="38" y="119" width="74" height="13" rx="6.5" fill="#b8895e"/>
+      <!-- Soil surface -->
+      <ellipse cx="75" cy="119" rx="36" ry="7" fill="#6b4226"/>
+      <!-- Main stem -->
+      <line id="p-stem" x1="75" y1="119" x2="75" y2="68" stroke="#40916c" stroke-width="5" stroke-linecap="round"/>
+      <!-- Left large leaf -->
+      <path id="p-ll" d="M75 102 C58 94 42 88 38 72 C50 69 66 78 75 94 Z" fill="#52b788"/>
+      <!-- Right large leaf -->
+      <path id="p-rl" d="M75 90 C92 80 110 76 114 60 C102 57 86 67 75 83 Z" fill="#40916c"/>
+      <!-- Left small leaf -->
+      <path id="p-ls" d="M75 80 C62 71 49 63 46 50 C58 47 70 57 75 72 Z" fill="#2d6a4f"/>
+      <!-- Right small leaf -->
+      <path id="p-rs" d="M75 72 C87 62 101 56 105 43 C93 40 80 51 75 65 Z" fill="#52b788"/>
+      <!-- Flower centre -->
+      <circle id="p-fo" cx="75" cy="58" r="9" fill="#b7e4c7"/>
+      <circle id="p-fi" cx="75" cy="58" r="5" fill="#d8f3dc"/>
+      <!-- Soil texture dots -->
+      <circle cx="62" cy="117" r="2" fill="#7a4d2e" opacity="0.6"/>
+      <circle cx="75" cy="116" r="2" fill="#7a4d2e" opacity="0.6"/>
+      <circle cx="88" cy="117" r="2" fill="#7a4d2e" opacity="0.6"/>
+    </svg>
+  </section>
+
+  <!-- Time slider -->
+  <div class="slider-card">
+    <div class="slider-card-label">Time Travel</div>
+    <input type="range" id="time-slider" min="0" max="0" value="0"
+           oninput="onSlider(this.value)">
+    <div class="slider-timestamp" id="slider-timestamp">Loading&hellip;</div>
+  </div>
+
+  <!-- Cards grid -->
+  <div class="cards-grid">
+
+    <!-- Moisture – wide accent card -->
+    <div class="card card--accent card--wide" id="moisture-card">
+      <div class="card-label">Soil Moisture</div>
+      <div>
+        <span class="card-value" id="moisture-value">--</span><span class="card-unit"> %</span>
+      </div>
+      <div class="moisture-bar-bg">
+        <div class="moisture-bar-fill" id="moisture-bar"></div>
+      </div>
+      <div class="card-sub" id="moisture-sub">Loading&hellip;</div>
+    </div>
+
+    <!-- Temperature -->
+    <div class="card">
+      <div class="card-label">Temperature</div>
+      <div>
+        <span class="card-value" id="temp-value" style="font-size:30px">--</span><span class="card-unit" style="font-size:15px"> &deg;C</span>
+      </div>
+      <div class="card-sub">Outdoor air</div>
+    </div>
+
+    <!-- Humidity -->
+    <div class="card">
+      <div class="card-label">Air Humidity</div>
+      <div>
+        <span class="card-value" id="humidity-value" style="font-size:30px">--</span><span class="card-unit" style="font-size:15px"> %</span>
+      </div>
+      <div class="card-sub">Relative</div>
+    </div>
+
+  </div>
+
+  <!-- Info chips -->
+  <div class="chips-row">
+    <div class="chip">
+      <div class="chip-icon">&#128167;</div>
+      <div class="chip-value" id="chip-last-watered">--</div>
+      <div class="chip-label">Last Watered</div>
+    </div>
+    <div class="chip">
+      <div class="chip-icon">&#128200;</div>
+      <div class="chip-value" id="chip-readings">--</div>
+      <div class="chip-label">Readings</div>
+    </div>
+    <div class="chip">
+      <div class="chip-icon">&#9748;</div>
+      <div class="chip-value" id="chip-waterings">--</div>
+      <div class="chip-label">Waterings</div>
+    </div>
+  </div>
+
+  </div><!-- /#tab-live -->
+
+  <!-- History tab -->
+  <div class="tab-panel" id="tab-history">
+
+  <!-- Summary -->
+  <div class="summary-card">
+    <div class="summary-title">Dataset Summary</div>
+    <div class="summary-row">
+      <span class="summary-row-label">Period</span>
+      <span class="summary-row-value" id="sum-period">--</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-row-label">Avg moisture</span>
+      <span class="summary-row-value" id="sum-avg-moisture">--</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-row-label">Min moisture</span>
+      <span class="summary-row-value" id="sum-min-moisture">--</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-row-label">Max moisture</span>
+      <span class="summary-row-value" id="sum-max-moisture">--</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-row-label">Avg temperature</span>
+      <span class="summary-row-value" id="sum-avg-temp">--</span>
+    </div>
+    <div class="summary-row">
+      <span class="summary-row-label">Total water added</span>
+      <span class="summary-row-value" id="sum-water-total">--</span>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-label">Soil Moisture Over Time</div>
+    <div id="chart-wrap-moisture">
+      <canvas id="chart-moisture"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-section-heading">Weather During Monitoring Period</div>
+  <div class="chart-card">
+    <div class="chart-card-label">Temperature &amp; Humidity Over Time</div>
+    <div id="chart-wrap-weather">
+      <canvas id="chart-weather"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-label">Moisture vs Temperature</div>
+    <div id="chart-wrap-moist-temp">
+      <canvas id="chart-moist-temp"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card-label">Moisture vs Humidity</div>
+    <div id="chart-wrap-moist-hum">
+      <canvas id="chart-moist-hum"></canvas>
+    </div>
+  </div>
+
+  </div><!-- /#tab-history -->
+
+</div><!-- /.app -->
+
+<script>
+  // ── Tabs ───────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('btn-' + name).classList.add('active');
+    document.getElementById('tab-' + name).classList.add('active');
+    if (name === 'history' && _chartRows) {
+      drawMoistureChart(_chartRows);
+      drawWeatherChart(_chartRows);
+      drawMoistTempChart(_chartRows);
+      drawMoistHumChart(_chartRows);
+    }
+  }
+
+  const CSV_PATH = 'Part_1_Sensing/Data/Soil%20Data%20-%20CombinedData.csv';
+
+  // ── Parse ──────────────────────────────────────────────
+  function parseCSV(text) {
+    const lines = text.trim().split('\n').slice(1); // skip header
+    return lines.map(line => {
+      const v = line.split(',');
+      return {
+        timestamp:  v[0].trim(),
+        rawValue:   +v[1],
+        moisture:   +v[2],
+        water:      +v[3],
+        temp:       +v[5],
+        humidity:   +v[6],
+      };
+    }).filter(r => !isNaN(r.moisture));
+  }
+
+  // ── Helpers ────────────────────────────────────────────
+  function fmtTimestamp(ts) {
+    // "M/D/YYYY H:MM:SS"  →  "DD/MM/YY HH:MM"
+    const [date, time] = ts.split(' ');
+    const [m, d, y] = date.split('/');
+    return `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y.slice(2)} ${time.slice(0,5)}`;
+  }
+
+  function fmtWatering(ts, cups) {
+    const [dp] = ts.split(' ');
+    const [m, d] = dp.split('/');
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${+d} ${months[+m - 1]} · ${cups} cups`;
+  }
+
+  function timeSince(thenTs, nowTs) {
+    const parse = ts => {
+      const [dp, tp] = ts.split(' ');
+      const [m, d, y] = dp.split('/');
+      return new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${tp}`);
+    };
+    const ms   = parse(nowTs) - parse(thenTs);
+    const days = Math.floor(ms / 86_400_000);
+    const hrs  = Math.floor((ms % 86_400_000) / 3_600_000);
+    if (days > 0) return `${days}d ${hrs}h ago`;
+    if (hrs  > 0) return `${hrs}h ago`;
+    return 'Just now';
+  }
+
+  function avg(arr) { return arr.reduce((a, b) => a + b, 0) / arr.length; }
+
+  function speechFor(pct) {
+    if (pct >= 75) return "I'm absolutely thriving! 🌿";
+    if (pct >= 60) return "Doing great, thanks for asking! 😊";
+    if (pct >= 45) return "I'm okay... could use a little water soon 🙂";
+    if (pct >= 30) return "Getting pretty thirsty over here... 😟";
+    return "PLEASE water me I'm DYING 😭";
+  }
+
+  function accentGradient(pct) {
+    if (pct >= 60) return 'linear-gradient(135deg, #52b788, #1b4332)';
+    if (pct >= 40) return 'linear-gradient(135deg, #95d5b2, #40916c)';
+    if (pct >= 25) return 'linear-gradient(135deg, #f6d860, #d97706)';
+    return                'linear-gradient(135deg, #fca5a5, #b91c1c)';
+  }
+
+  // ── Chart ───────────────────────────────────────────────
+  let _chartRows = null;
+
+  function parseTs(ts) {
+    const [dp, tp] = ts.split(' ');
+    const [m, d, y] = dp.split('/');
+    return new Date(
+      `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${tp.padStart(8,'0')}`
+    ).getTime();
+  }
+
+  function drawWaterDrop(ctx, cx, tipY, r, color) {
+    // Teardrop: pointed tip at top, round bulge below
+    ctx.beginPath();
+    ctx.moveTo(cx, tipY);
+    ctx.bezierCurveTo(cx + r * 1.3, tipY + r * 1.3,
+                      cx + r,       tipY + r * 2.7, cx, tipY + r * 3.3);
+    ctx.bezierCurveTo(cx - r,       tipY + r * 2.7,
+                      cx - r * 1.3, tipY + r * 1.3, cx, tipY);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function drawMoistureChart(rows) {
+    _chartRows = rows;
+    const canvas = document.getElementById('chart-moisture');
+    const wrap   = document.getElementById('chart-wrap-moisture');
+    const W = wrap.clientWidth;
+    if (W === 0) return; // panel is hidden – will redraw on tab switch
+
+    const CHART_H = 215;
+    const PAD = { top: 28, right: 14, bottom: 40, left: 38 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = CHART_H - PAD.top - PAD.bottom;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = Math.round(W * dpr);
+    canvas.height = Math.round(CHART_H * dpr);
+    canvas.style.width  = W + 'px';
+    canvas.style.height = CHART_H + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, CHART_H);
+
+    const minTs   = parseTs(rows[0].timestamp);
+    const maxTs   = parseTs(rows[rows.length - 1].timestamp);
+    const tsRange = maxTs - minTs;
+
+    const xOf = ts  => PAD.left + (ts - minTs) / tsRange * plotW;
+    const yOf = pct => PAD.top  + (1 - pct / 100) * plotH;
+
+    // ── Y-axis grid lines & labels ──────────────────────────
+    ctx.font = '10px system-ui, -apple-system, sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    [0, 25, 50, 75, 100].forEach(v => {
+      const y = yOf(v);
+      ctx.beginPath();
+      ctx.strokeStyle = '#eaf6ef';
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([]);
+      ctx.moveTo(PAD.left, y);
+      ctx.lineTo(PAD.left + plotW, y);
+      ctx.stroke();
+      ctx.fillStyle = '#aad9be';
+      ctx.fillText(v + '%', PAD.left - 5, y);
+    });
+
+    // ── Area fill ────────────────────────────────────────────
+    const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + plotH);
+    grad.addColorStop(0, 'rgba(82, 183, 136, 0.22)');
+    grad.addColorStop(1, 'rgba(82, 183, 136, 0)');
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      const x = xOf(parseTs(r.timestamp)), y = yOf(r.moisture);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.lineTo(xOf(maxTs), PAD.top + plotH);
+    ctx.lineTo(xOf(minTs), PAD.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // ── Moisture line ────────────────────────────────────────
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      const x = xOf(parseTs(r.timestamp)), y = yOf(r.moisture);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = '#40916c';
+    ctx.lineWidth   = 2;
+    ctx.lineJoin    = 'round';
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    // ── Watering events ──────────────────────────────────────
+    rows.filter(r => r.water > 0).forEach(r => {
+      const x = xOf(parseTs(r.timestamp));
+      // dashed vertical line
+      ctx.beginPath();
+      ctx.setLineDash([3, 4]);
+      ctx.strokeStyle = '#74c8e8';
+      ctx.lineWidth   = 1.5;
+      ctx.moveTo(x, PAD.top);
+      ctx.lineTo(x, PAD.top + plotH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // water drop marker sitting above chart area
+      drawWaterDrop(ctx, x, PAD.top - 22, 5, '#4a9eda');
+    });
+
+    // ── X-axis labels ────────────────────────────────────────
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    ctx.font         = '10px system-ui, -apple-system, sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle    = '#aad9be';
+    const tickStart = new Date(minTs);
+    tickStart.setHours(0, 0, 0, 0);
+    let t = tickStart.getTime();
+    const STEP = 3 * 86_400_000; // tick every 3 days
+    while (t <= maxTs + 1000) {
+      const x = xOf(t);
+      if (x >= PAD.left && x <= PAD.left + plotW) {
+        const dt = new Date(t);
+        ctx.fillText(`${dt.getDate()} ${MONTHS[dt.getMonth()]}`, x, PAD.top + plotH + 6);
+        ctx.beginPath();
+        ctx.strokeStyle = '#d1ead9';
+        ctx.lineWidth   = 1;
+        ctx.moveTo(x, PAD.top + plotH);
+        ctx.lineTo(x, PAD.top + plotH + 4);
+        ctx.stroke();
+      }
+      t += STEP;
+    }
+  }
+
+  // ── Generic dual-axis chart ────────────────────────────
+  // L / R config: { field, legendLabel, tickSuffix, color, lineWidth, min, max, ticks }
+  function drawDualAxisChart(canvasId, wrapId, rows, L, R) {
+    const canvas = document.getElementById(canvasId);
+    const wrap   = document.getElementById(wrapId);
+    const W = wrap.clientWidth;
+    if (W === 0) return;
+
+    const CHART_H = 200;
+    const PAD = { top: 28, right: 40, bottom: 40, left: 38 };
+    const plotW = W - PAD.left - PAD.right;
+    const plotH = CHART_H - PAD.top - PAD.bottom;
+
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width  = Math.round(W * dpr);
+    canvas.height = Math.round(CHART_H * dpr);
+    canvas.style.width  = W + 'px';
+    canvas.style.height = CHART_H + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, CHART_H);
+
+    const minTs   = parseTs(rows[0].timestamp);
+    const maxTs   = parseTs(rows[rows.length - 1].timestamp);
+    const tsRange = maxTs - minTs;
+    const xOf  = ts => PAD.left + (ts - minTs) / tsRange * plotW;
+    const yOfL = v  => PAD.top  + (1 - (v - L.min) / (L.max - L.min)) * plotH;
+    const yOfR = v  => PAD.top  + (1 - (v - R.min) / (R.max - R.min)) * plotH;
+
+    ctx.font = '10px system-ui, -apple-system, sans-serif';
+
+    // Grid lines driven by left ticks + left y-labels
+    L.ticks.forEach(v => {
+      const y = yOfL(v);
+      ctx.beginPath();
+      ctx.strokeStyle = '#eaf6ef';
+      ctx.lineWidth   = 1;
+      ctx.setLineDash([]);
+      ctx.moveTo(PAD.left, y);
+      ctx.lineTo(PAD.left + plotW, y);
+      ctx.stroke();
+      ctx.textAlign    = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle    = L.color;
+      ctx.fillText(v + L.tickSuffix, PAD.left - 5, y);
+    });
+
+    // Right y-labels
+    R.ticks.forEach(v => {
+      ctx.textAlign    = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle    = R.color;
+      ctx.fillText(v + R.tickSuffix, PAD.left + plotW + 5, yOfR(v));
+    });
+
+    // Right line first so left paints on top
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      const x = xOf(parseTs(r.timestamp)), y = yOfR(r[R.field]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = R.color;
+    ctx.lineWidth   = R.lineWidth;
+    ctx.lineJoin    = 'round';
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    // Left line
+    ctx.beginPath();
+    rows.forEach((r, i) => {
+      const x = xOf(parseTs(r.timestamp)), y = yOfL(r[L.field]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = L.color;
+    ctx.lineWidth   = L.lineWidth;
+    ctx.lineJoin    = 'round';
+    ctx.setLineDash([]);
+    ctx.stroke();
+
+    // Legend in top padding
+    const legY = 14;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign    = 'left';
+    [[L, PAD.left], [R, PAD.left + 130]].forEach(([cfg, lx]) => {
+      ctx.beginPath();
+      ctx.strokeStyle = cfg.color;
+      ctx.lineWidth   = cfg.lineWidth;
+      ctx.moveTo(lx, legY);
+      ctx.lineTo(lx + 16, legY);
+      ctx.stroke();
+      ctx.fillStyle = '#1b4332';
+      ctx.fillText(cfg.legendLabel, lx + 20, legY);
+    });
+
+    // X-axis labels
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun',
+                    'Jul','Aug','Sep','Oct','Nov','Dec'];
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle    = '#aad9be';
+    const tickStart  = new Date(minTs);
+    tickStart.setHours(0, 0, 0, 0);
+    let t = tickStart.getTime();
+    const STEP = 3 * 86_400_000;
+    while (t <= maxTs + 1000) {
+      const x = xOf(t);
+      if (x >= PAD.left && x <= PAD.left + plotW) {
+        const dt = new Date(t);
+        ctx.fillText(`${dt.getDate()} ${MONTHS[dt.getMonth()]}`, x, PAD.top + plotH + 6);
+        ctx.beginPath();
+        ctx.strokeStyle = '#d1ead9';
+        ctx.lineWidth   = 1;
+        ctx.moveTo(x, PAD.top + plotH);
+        ctx.lineTo(x, PAD.top + plotH + 4);
+        ctx.stroke();
+      }
+      t += STEP;
+    }
+  }
+
+  function drawWeatherChart(rows) {
+    drawDualAxisChart('chart-weather', 'chart-wrap-weather', rows,
+      { field: 'temp',     legendLabel: 'Temp (\u00b0C)',    tickSuffix: '\u00b0', color: '#d4813a', lineWidth: 2,   min: 0,  max: 20,  ticks: [0,5,10,15,20]   },
+      { field: 'humidity', legendLabel: 'Humidity (%)', tickSuffix: '%',       color: '#4a9eda', lineWidth: 1.5, min: 40, max: 100, ticks: [40,60,80,100]    }
+    );
+  }
+
+  function drawMoistTempChart(rows) {
+    drawDualAxisChart('chart-moist-temp', 'chart-wrap-moist-temp', rows,
+      { field: 'moisture', legendLabel: 'Moisture (%)',      tickSuffix: '%',       color: '#40916c', lineWidth: 2,   min: 0,  max: 100, ticks: [0,25,50,75,100] },
+      { field: 'temp',     legendLabel: 'Temp (\u00b0C)',    tickSuffix: '\u00b0',  color: '#d4813a', lineWidth: 1.5, min: 0,  max: 20,  ticks: [0,5,10,15,20]   }
+    );
+  }
+
+  function drawMoistHumChart(rows) {
+    drawDualAxisChart('chart-moist-hum', 'chart-wrap-moist-hum', rows,
+      { field: 'moisture', legendLabel: 'Moisture (%)',      tickSuffix: '%', color: '#40916c', lineWidth: 2,   min: 0,  max: 100, ticks: [0,25,50,75,100] },
+      { field: 'humidity', legendLabel: 'Humidity (%)', tickSuffix: '%', color: '#4a9eda', lineWidth: 1.5, min: 40, max: 100, ticks: [40,60,80,100]    }
+    );
+  }
+
+  // ── Plant colour palettes by moisture tier ─────────────
+  //   stem | left-large | right-large | left-small | right-small | flower-outer | flower-inner
+  const PLANT_PALETTES = [
+    // dying  < 30 %
+    { stem:'#8b6e4a', ll:'#9e9e58', rl:'#888848', ls:'#7a7a40', rs:'#9e9e58', fo:'#c8c49a', fi:'#dddcc0' },
+    // thirsty 30-45 %
+    { stem:'#7a8c5a', ll:'#b4c76e', rl:'#9ab05a', ls:'#869c4e', rs:'#b4c76e', fo:'#d8da9e', fi:'#eceeb8' },
+    // okay    45-60 %
+    { stem:'#52875e', ll:'#74c69d', rl:'#5aad84', ls:'#489670', rs:'#74c69d', fo:'#c8eedd', fi:'#e0f5eb' },
+    // good    60-75 %
+    { stem:'#40916c', ll:'#52b788', rl:'#40916c', ls:'#2d6a4f', rs:'#52b788', fo:'#b7e4c7', fi:'#d8f3dc' },
+    // thriving >= 75 %
+    { stem:'#2d6a4f', ll:'#52c78e', rl:'#3dbb7e', ls:'#1b5e42', rs:'#52c78e', fo:'#95edc7', fi:'#c0fadf' },
+  ];
+
+  function paletteFor(pct) {
+    if (pct >= 75) return PLANT_PALETTES[4];
+    if (pct >= 60) return PLANT_PALETTES[3];
+    if (pct >= 45) return PLANT_PALETTES[2];
+    if (pct >= 30) return PLANT_PALETTES[1];
+    return PLANT_PALETTES[0];
+  }
+
+  function fmtSliderDate(ts) {
+    const [dp, tp] = ts.split(' ');
+    const [m, d, y] = dp.split('/');
+    const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dt = new Date(`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${tp.padStart(8,'0')}`);
+    return `${DAYS[dt.getDay()]} ${+d} ${MONTHS[+m-1]} ${y}, ${tp.slice(0,5)}`;
+  }
+
+  function updateSliderTrack() {
+    const s = document.getElementById('time-slider');
+    if (!+s.max) return;
+    const pct = (+s.value / +s.max * 100).toFixed(1) + '%';
+    s.style.background = `linear-gradient(to right, #40916c ${pct}, #d8f3dc ${pct})`;
+  }
+
+  function renderLiveRow(row, idx) {
+    // Speech bubble
+    document.getElementById('speech-bubble').textContent = speechFor(row.moisture);
+
+    // Plant SVG colours
+    const p = paletteFor(row.moisture);
+    document.getElementById('p-stem').setAttribute('stroke', p.stem);
+    document.getElementById('p-ll').setAttribute('fill', p.ll);
+    document.getElementById('p-rl').setAttribute('fill', p.rl);
+    document.getElementById('p-ls').setAttribute('fill', p.ls);
+    document.getElementById('p-rs').setAttribute('fill', p.rs);
+    document.getElementById('p-fo').setAttribute('fill', p.fo);
+    document.getElementById('p-fi').setAttribute('fill', p.fi);
+
+    // Moisture card
+    document.getElementById('moisture-card').style.background = accentGradient(row.moisture);
+    document.getElementById('moisture-value').textContent = row.moisture.toFixed(1);
+    document.getElementById('moisture-bar').style.width   = Math.min(row.moisture, 100) + '%';
+    document.getElementById('moisture-sub').textContent   = `Raw ADC value: ${row.rawValue}`;
+
+    // Temp & humidity
+    document.getElementById('temp-value').textContent     = row.temp.toFixed(1);
+    document.getElementById('humidity-value').textContent = row.humidity.toFixed(0);
+
+    // Slider timestamp label
+    document.getElementById('slider-timestamp').textContent = fmtSliderDate(row.timestamp);
+
+    // Chips — compute relative to current slider position
+    const visible  = _chartRows.slice(0, idx + 1);
+    const wetSoFar = visible.filter(r => r.water > 0);
+    const lastWet  = wetSoFar[wetSoFar.length - 1];
+    document.getElementById('chip-last-watered').textContent =
+      lastWet ? fmtWatering(lastWet.timestamp, lastWet.water) : 'N/A';
+    document.getElementById('chip-readings').textContent  = visible.length;
+    document.getElementById('chip-waterings').textContent = wetSoFar.length;
+  }
+
+  function onSlider(val) {
+    const row = _chartRows[+val];
+    updateSliderTrack();
+    renderLiveRow(row, +val);
+  }
+
+  // ── Populate DOM ───────────────────────────────────────
+  function populate(rows) {
+    _chartRows = rows;
+    const latest  = rows[rows.length - 1];
+
+    // Status bar
+    document.getElementById('last-updated').textContent =
+      'Updated ' + fmtTimestamp(latest.timestamp);
+
+    // Slider — initialise to latest reading (rightmost position)
+    const slider = document.getElementById('time-slider');
+    slider.max   = rows.length - 1;
+    slider.value = rows.length - 1;
+    updateSliderTrack();
+
+    // Render the latest reading (also sets speech bubble, plant colours, cards, chips)
+    renderLiveRow(latest, rows.length - 1);
+
+    // Summary
+    const moistures = rows.map(r => r.moisture);
+    const temps     = rows.map(r => r.temp);
+    const wetRows   = rows.filter(r => r.water > 0);
+    const totalWater = wetRows.reduce((s, r) => s + r.water, 0);
+
+    document.getElementById('sum-period').textContent =
+      `${fmtTimestamp(rows[0].timestamp).slice(0,8)} – ${fmtTimestamp(latest.timestamp).slice(0,8)}`;
+    document.getElementById('sum-avg-moisture').textContent =
+      avg(moistures).toFixed(1) + '%';
+    document.getElementById('sum-min-moisture').textContent =
+      Math.min(...moistures).toFixed(1) + '%';
+    document.getElementById('sum-max-moisture').textContent =
+      Math.max(...moistures).toFixed(1) + '%';
+    document.getElementById('sum-avg-temp').textContent =
+      avg(temps).toFixed(1) + '\u00b0C';
+    document.getElementById('sum-water-total').textContent =
+      totalWater.toFixed(2) + ' cups';
+
+    // Charts (no-ops if History tab is hidden; redraw on tab switch / resize)
+    drawMoistureChart(rows);
+    drawWeatherChart(rows);
+    drawMoistTempChart(rows);
+    drawMoistHumChart(rows);
+  }
+
+  // ── Fetch ──────────────────────────────────────────────
+  async function loadData() {
+    try {
+      const res = await fetch(CSV_PATH);
+      if (!res.ok) throw new Error(`HTTP ${res.status} – ${res.statusText}`);
+      const rows = parseCSV(await res.text());
+      if (rows.length === 0) throw new Error('CSV parsed but no valid rows found');
+      populate(rows);
+
+      // Redraw charts on container resize (handles orientation changes too)
+      const redrawAll = () => {
+        if (!_chartRows) return;
+        drawMoistureChart(_chartRows);
+        drawWeatherChart(_chartRows);
+        drawMoistTempChart(_chartRows);
+        drawMoistHumChart(_chartRows);
+      };
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(redrawAll);
+        ['chart-wrap-moisture','chart-wrap-weather',
+         'chart-wrap-moist-temp','chart-wrap-moist-hum']
+          .forEach(id => ro.observe(document.getElementById(id)));
+      } else {
+        window.addEventListener('resize', redrawAll);
+      }
+    } catch (err) {
+      document.getElementById('last-updated').textContent = 'Failed to load';
+      document.querySelector('.app').insertAdjacentHTML('beforeend', `
+        <div class="error-card">
+          <strong>Could not load sensor data</strong><br>
+          <small>${err.message}</small><br><br>
+          <small>Make sure you are serving this file from a local server or GitHub Pages,
+          not opening it directly as a <code>file://</code> URL.</small>
+        </div>
+      `);
+    }
+  }
+
+  loadData();
+</script>
+</body>
+</html>
